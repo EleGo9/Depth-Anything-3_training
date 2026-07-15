@@ -24,6 +24,19 @@ image + depth data. This README only covers that training pipeline.
 - `README.md` -- the detailed reference: full data format spec, preprocessing internals,
   loss/schedule rationale, and an explicit list of how this diverges from the DA2 training
   recipe it's structured after.
+# Conda env 
+
+conda create --name da3 python==3.12
+conda activate da3
+pip3 install torch torchvision --index-url https://download.pytorch.org/whl/cu132  #visit https://pytorch.org/get-started/locally/ for custom cuda version
+conda install cuda-toolkit
+pip install -r requirements.txt
+pip install xformers torch\>=2 torchvision
+pip install -e . # Basic
+pip install --no-build-isolation git+https://github.com/nerfstudio-project/gsplat.git@0b4dddf04cb687367602c01196913cde6a743d70 # for gaussian head
+pip install ninja wheel setuptools
+pip install -e ".[all]"
+
 
 ## Quickstart
 
