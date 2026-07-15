@@ -41,6 +41,7 @@ from depth_anything_3.train.metrics import eval_depth
 from depth_anything_3.train.transform import IMAGENET_MEAN, IMAGENET_STD
 from depth_anything_3.train.utils import init_log
 from depth_anything_3.utils.visualize import visualize_depth
+import cv2
 
 _default_config = os.path.join(os.path.dirname(__file__), "configs", "default.yaml")
 
@@ -54,6 +55,15 @@ def _log_val_sample_to_wandb(img: torch.Tensor, gt_depth: torch.Tensor, pred_dep
     mask_np = mask.detach().cpu().numpy()
     gt_np = gt_depth.detach().float().cpu().numpy().copy()
     pred_np = pred_depth.detach().float().cpu().numpy().copy()
+    gt_np[~mask_np] = 0
+    pred_np[~mask_np] = 0
+
+    # In val mode, transform.Resize only resizes the image (resize_target=False), so depth/pred
+    # stay at the GT's native resolution while img is still at the (smaller) model input
+    # resolution -- resize it up to match before building the side-by-side panel.
+    h, w = gt_np.shape[-2:]
+    if img_np.shape[:2] != (h, w):
+        img_np = cv2.resize(img_np, (w, h), interpolation=cv2.INTER_LINEAR)
     gt_np[~mask_np] = 0
     pred_np[~mask_np] = 0
 
