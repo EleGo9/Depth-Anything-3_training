@@ -4,4 +4,9 @@ wandb/
 workspace/
 */*/__pycache__/
 */*/*/__pycache__/*
+src/depth_anything_3/model/__pycache__/*.pyc
+src/depth_anything_3/model/dinov2/layers/__pycache__/*.pyc
+src/depth_anything_3/utils/__pycache__/*
+src/depth_anything_3/utils/export/__pycache__/*
+
 
