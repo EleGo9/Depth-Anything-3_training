@@ -329,12 +329,14 @@ def main():
                     step=iters,
                 )
 
+        prev_best_metric_value = previous_best[config.train.best_metric]
         for k in results:
             val = (results[k] / max(nsamples.item(), 1.0)).item()
             if k in ("d1", "d2", "d3"):
                 previous_best[k] = max(previous_best[k], val)
             else:
                 previous_best[k] = min(previous_best[k], val)
+        is_new_best = previous_best[config.train.best_metric] != prev_best_metric_value
 
         if rank == 0:
             checkpoint = {
@@ -344,6 +346,15 @@ def main():
                 "previous_best": previous_best,
             }
             torch.save(checkpoint, os.path.join(config.train.save_path, "latest.pth"))
+            if is_new_best:
+                torch.save(checkpoint, os.path.join(config.train.save_path, "best.pth"))
+                logger.info(
+                    "New best %s: %.4f (epoch %d) -- saved best.pth",
+                    config.train.best_metric, previous_best[config.train.best_metric], epoch,
+                )
+                if config.wandb.enabled:
+                    wandb.run.summary[f"best_{config.train.best_metric}"] = previous_best[config.train.best_metric]
+                    wandb.run.summary["best_epoch"] = epoch
 
     if rank == 0 and config.wandb.enabled:
         wandb.finish()

@@ -1,0 +1,8 @@
+# Partially unfreeze the DINOv2 backbone (last 4 blocks) instead of the default fully-frozen
+# setup. More capacity to adapt to your domain, at the cost of more params to train / higher risk
+# of overfitting on a small dataset -- worth comparing eval/* against default.yaml.
+__inherit__: depth_anything_3.train.configs.default
+
+train:
+  unfreeze_last_n_blocks: 4
+  save_path: workspace/exp_unfreeze_backbone

@@ -1,0 +1,11 @@
+# Fast smoke test: 1 epoch, batch size 1, wandb off. Use to sanity-check a code/config change
+# runs end-to-end before committing to a full experiment.
+__inherit__: depth_anything_3.train.configs.default
+
+train:
+  epochs: 1
+  bs: 1
+  save_path: workspace/debug_run
+
+wandb:
+  enabled: false

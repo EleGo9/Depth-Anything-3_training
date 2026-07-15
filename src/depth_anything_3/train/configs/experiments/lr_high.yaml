@@ -1,0 +1,7 @@
+# Learning rate sweep: 10x higher than default.yaml's 5e-6/5e-5 (encoder/head).
+# Try this if training loss plateaus too early / converges too slowly.
+__inherit__: depth_anything_3.train.configs.default
+
+train:
+  lr: 5.0e-5
+  save_path: workspace/exp_lr_high

@@ -1,0 +1,9 @@
+# Baseline loss: SiLogLoss only (matches the plain DA2 reference recipe), both optional
+# regularizers off. Useful as a control run to see what GradientLoss/GlobalLocalLoss actually buy
+# you -- compare its eval/* curves against default.yaml (which has both on).
+__inherit__: depth_anything_3.train.configs.default
+
+train:
+  grad_weight: 0.0
+  gl_weight: 0.0
+  save_path: workspace/exp_silog_only
