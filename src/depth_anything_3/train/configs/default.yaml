@@ -1,0 +1,86 @@
+# Depth Anything 3 - monocular depth head fine-tuning configuration
+#
+# Load with the default path, or point --config at a copy of this file.
+# Any value can also be overridden inline via dotlist notation:
+#   torchrun -m depth_anything_3.train.train --config my_run.yaml train.epochs=10
+#
+# See depth_anything_3.cfg for the underlying OmegaConf-based config utilities.
+
+# ==============================================================================
+# Model
+# ==============================================================================
+model:
+  # HF Hub repo id or local checkpoint dir to fine-tune from
+  pretrained: depth-anything/DA3MONO-LARGE
+
+# ==============================================================================
+# Data
+# ==============================================================================
+data:
+  # Plain-text "image_path depth_path" filelists (see train/dataset.py)
+  train_filelist: /media/elena/T7/DAsim_dataset_gatti/splits/fisheye_sim/train.txt
+  val_filelist: /media/elena/T7/DAsim_dataset_gatti/splits/fisheye_sim/val.txt
+
+  # Longest image side after resize; must be a multiple of 14
+  img_size: 504
+
+  min_depth: 0.001
+  max_depth: 80.0
+
+  # Multiply raw depth values by this to get meters
+  depth_scale: 1.0
+
+# ==============================================================================
+# Training
+# ==============================================================================
+train:
+  epochs: 20
+  bs: 2
+
+  # Base LR for unfrozen backbone params; head uses lr * 10.
+  # 5e-6 / 5e-5 matches DA3-Metric's paper recipe (encoder/decoder LR), which lines up with this
+  # script's fixed 10x backbone->head ratio (head_lr_mult in train.py).
+  lr: 5.0e-6
+
+  # Unfreeze the last N DINOv2 blocks in addition to the head (0 = backbone fully frozen).
+  # Ignored if fine_tune_layers is set.
+  unfreeze_last_n_blocks: 0
+
+  # Comma-separated explicit DINOv2 block indices to unfreeze in addition to the head,
+  # e.g. "20,21,22,23" for da3-large's 24-block backbone. Takes precedence over
+  # unfreeze_last_n_blocks when set.
+  fine_tune_layers: null
+
+  # Weight of the optional gradient-matching loss (alpha in the DA3 paper's L_grad term)
+  grad_weight: 1.0
+
+  # Weight of the optional global-local scale-shift-invariant loss (approximates the DA3 paper's
+  # L_gl term -- see losses.py's module docstring for what's approximated vs. exact). 0 = off.
+  gl_weight: 1.0
+
+  # Patch grid size (grid_size x grid_size) for the local term of the global-local loss
+  gl_grid_size: 4
+
+  # Enable bf16 autocast (off by default, unlike inference code)
+  amp_bf16: false
+
+  save_path: workspace/debug_run
+
+  # Path to a previous latest.pth to resume from
+  resume: null
+
+  # Fixed port for the local single-node process group (null = auto)
+  port: null
+
+# ==============================================================================
+# Weights & Biases logging (mirrors what's already sent to TensorBoard)
+# ==============================================================================
+wandb:
+  enabled: true
+  project: depth-anything-3-finetune
+
+  # Run name shown in the wandb UI (null = wandb auto-generates one)
+  run_name: null
+
+  # wandb entity/team (null = your default entity)
+  entity: null
