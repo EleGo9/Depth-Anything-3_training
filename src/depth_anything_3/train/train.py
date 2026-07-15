@@ -241,7 +241,7 @@ def main():
                 pred = output.depth[:, 0]
 
             mask = (valid_mask == 1) & (depth >= config.data.min_depth) & (depth <= config.data.max_depth)
-            loss = criterion(pred.float(), depth, mask)
+            loss, loss_components = criterion(pred.float(), depth, mask)
             if "sky" in output:
                 # DPT's sky head always runs and its output is part of forward()'s return value,
                 # so DDP (find_unused_parameters=True) traces it as "used" and expects a gradient
@@ -265,7 +265,17 @@ def main():
             if rank == 0:
                 writer.add_scalar("train/loss", loss.item(), iters)
                 if config.wandb.enabled:
-                    wandb.log({"train/loss": loss.item(), "train/lr": optimizer.param_groups[1]["lr"]}, step=iters)
+                    wandb_log = {
+                        "train/loss_step": loss.item(),
+                        "train/loss_epoch_avg": total_loss / (i + 1),
+                        "train/lr": optimizer.param_groups[1]["lr"],
+                        "train/loss_depth": loss_components["silog"].item(),
+                    }
+                    if "grad" in loss_components:
+                        wandb_log["train/loss_grad"] = loss_components["grad"].item()
+                    if "gl" in loss_components:
+                        wandb_log["train/loss_gl"] = loss_components["gl"].item()
+                    wandb.log(wandb_log, step=iters)
                 if i % 100 == 0:
                     logger.info(
                         "Iter: %d/%d, LR: %.7f, Loss: %.3f",

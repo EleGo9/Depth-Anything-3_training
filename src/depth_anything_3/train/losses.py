@@ -158,10 +158,16 @@ class DepthLoss(nn.Module):
         self.gl_weight = gl_weight
         self.global_local = GlobalLocalLoss(grid_size=gl_grid_size) if gl_weight > 0 else None
 
-    def forward(self, pred: torch.Tensor, target: torch.Tensor, valid_mask: torch.Tensor) -> torch.Tensor:
-        loss = self.silog(pred, target, valid_mask)
+    def forward(
+        self, pred: torch.Tensor, target: torch.Tensor, valid_mask: torch.Tensor
+    ) -> tuple[torch.Tensor, dict[str, torch.Tensor]]:
+        """Returns (total_loss, components) so callers can log each term separately."""
+        components = {"silog": self.silog(pred, target, valid_mask)}
+        loss = components["silog"]
         if self.gradient is not None:
-            loss = loss + self.grad_weight * self.gradient(pred, target, valid_mask)
+            components["grad"] = self.gradient(pred, target, valid_mask)
+            loss = loss + self.grad_weight * components["grad"]
         if self.global_local is not None:
-            loss = loss + self.gl_weight * self.global_local(pred, target, valid_mask)
-        return loss
+            components["gl"] = self.global_local(pred, target, valid_mask)
+            loss = loss + self.gl_weight * components["gl"]
+        return loss, components
