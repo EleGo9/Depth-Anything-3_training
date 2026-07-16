@@ -18,8 +18,8 @@ model:
 # ==============================================================================
 data:
   # Plain-text "image_path depth_path" filelists (see train/dataset.py)
-  train_filelist: /media/elena/T7/DAsim_dataset_gatti/splits/fisheye_sim/train.txt
-  val_filelist: /media/elena/T7/DAsim_dataset_gatti/splits/fisheye_sim/val.txt
+  train_filelist: /home/egovi/data/DAsim_dataset_gatti/splits/fisheye_sim/train.txt
+  val_filelist: /home/egovi/data/DAsim_dataset_gatti/splits/fisheye_sim/val.txt
 
   # Longest image side after resize; must be a multiple of 14
   img_size: 504
@@ -34,13 +34,14 @@ data:
 # Training
 # ==============================================================================
 train:
-  epochs: 20
-  bs: 2
+  epochs: 500
+  bs: 12
 
   # Base LR for unfrozen backbone params; head uses lr * 10.
   # 5e-6 / 5e-5 matches DA3-Metric's paper recipe (encoder/decoder LR), which lines up with this
   # script's fixed 10x backbone->head ratio (head_lr_mult in train.py).
-  lr: 5.0e-6
+  # lr: 5.0e-6
+  lr: 1.0e-6
 
   # Unfreeze the last N DINOv2 blocks in addition to the head (0 = backbone fully frozen).
   # Ignored if fine_tune_layers is set.
@@ -49,7 +50,7 @@ train:
   # Comma-separated explicit DINOv2 block indices to unfreeze in addition to the head,
   # e.g. "20,21,22,23" for da3-large's 24-block backbone. Takes precedence over
   # unfreeze_last_n_blocks when set.
-  fine_tune_layers: null
+  fine_tune_layers: "20,21,22,23"
 
   # Weight of the optional gradient-matching loss (alpha in the DA3 paper's L_grad term)
   grad_weight: 1.0
@@ -60,6 +61,13 @@ train:
 
   # Patch grid size (grid_size x grid_size) for the local term of the global-local loss
   gl_grid_size: 4
+
+  
+  # Validation metric used to decide which epoch's weights get saved as best.pth (in addition to
+  # latest.pth, which is always overwritten every epoch regardless). One of: d1, d2, d3 (higher
+  # is better), or abs_err, abs_rel, sq_rel, rmse, rmse_log, log10, silog (lower is better).
+  best_metric: abs_rel
+
 
   # Enable bf16 autocast (off by default, unlike inference code)
   amp_bf16: false
