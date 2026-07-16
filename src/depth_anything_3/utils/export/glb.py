@@ -62,6 +62,7 @@ def export_to_glb(
     show_cameras: bool = True,
     camera_size: float = 0.03,
     export_depth_vis: bool = True,
+    scene_name: str =None,
 ) -> str:
     """Generate a 3D point cloud and camera wireframes and export them as a ``.glb`` file.
 
@@ -175,12 +176,15 @@ def export_to_glb(
 
     # 9) Export
     os.makedirs(export_dir, exist_ok=True)
-    out_path = os.path.join(export_dir, "scene.glb")
+    if scene_name!=None:
+        out_path = os.path.join(export_dir, scene_name + ".glb")
+    else:
+        out_path = os.path.join(export_dir, "scene.glb")
     scene.export(out_path)
 
     if export_depth_vis:
         export_to_depth_vis(prediction, export_dir)
-        os.system(f"cp -r {export_dir}/depth_vis/0000.jpg {export_dir}/scene.jpg")
+        os.system(f"cp -r {export_dir}/depth_vis/{scene_name}.jpg {export_dir}/{scene_name}.jpg")
     return out_path
 
 

@@ -156,12 +156,14 @@ def run_and_export(api_model, args, output_dir: str):
 
     if prediction.conf is None:
         prediction.conf = np.ones_like(prediction.depth)
+    print(args.input.split('/')[-1].split('.')[0])
 
     export_to_glb(
         prediction=prediction,
         export_dir=output_dir,
         conf_thresh_percentile=args.conf_thresh_percentile,
         num_max_points=args.num_max_points,
+        scene_name=args.input.split('/')[-1].split('.')[0]
     )
 
     print(f"GLB exported to {output_dir}/scene.glb")
