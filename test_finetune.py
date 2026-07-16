@@ -14,9 +14,15 @@ reconstructed shape, not a metrically-correct point cloud.
 
 Usage:
     python test_finetune.py --input path/to/image.jpg --checkpoint workspace/finetune_mono/best.pth
+
+    # Also export the original (non-fine-tuned) pretrained model's GLB for comparison, into
+    # <output>/pretrained/scene.glb and <output>/finetuned/scene.glb:
+    python test_finetune.py --input path/to/image.jpg --checkpoint workspace/finetune_mono/best.pth \
+        --compare-pretrained
 """
 
 import argparse
+import os
 
 import numpy as np
 import torch
@@ -34,6 +40,10 @@ parser.add_argument("--checkpoint", type=str, required=True,
 parser.add_argument("--pretrained", type=str, default="depth-anything/DA3MONO-LARGE",
                      help="Base DA3 preset the checkpoint was fine-tuned from (must match its architecture)")
 parser.add_argument("--output", type=str, default="output", help="Directory to write scene.glb into")
+parser.add_argument("--compare-pretrained", action="store_true",
+                     help="Also run the original (non-fine-tuned) --pretrained checkpoint on the same image, "
+                          "for a side-by-side comparison. Writes <output>/pretrained/scene.glb and "
+                          "<output>/finetuned/scene.glb instead of <output>/scene.glb.")
 parser.add_argument("--intrinsics", type=str, default=None,
                      help="Optional path to a 3x3 camera intrinsics matrix (.txt or .npy). Default: "
                           "fx=fy=max(H,W), principal point centered.")
@@ -49,21 +59,8 @@ def _load_matrix(path: str) -> np.ndarray:
     return np.loadtxt(path) if path.endswith(".txt") else np.load(path)
 
 
-def main():
-    args = parser.parse_args()
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-    print(f"Loading base architecture {args.pretrained}...")
-    api_model = DepthAnything3.from_pretrained(args.pretrained)
-
-    print(f"Loading fine-tuned weights from {args.checkpoint}...")
-    ckpt = torch.load(args.checkpoint, map_location="cpu")
-    api_model.model.load_state_dict(ckpt["model"])
-    api_model.model.eval()
-    api_model.to(device)
-
-    print_model_summary(api_model.model)
-
+def run_and_export(api_model, args, output_dir: str):
+    """Runs inference on args.input with api_model's currently-loaded weights and exports a GLB."""
     print(f"Running inference on {args.input}...")
     prediction = api_model.inference(
         [args.input],
@@ -91,13 +88,39 @@ def main():
 
     export_to_glb(
         prediction=prediction,
-        export_dir=args.output,
+        export_dir=output_dir,
         conf_thresh_percentile=args.conf_thresh_percentile,
         num_max_points=args.num_max_points,
     )
 
-    print(f"\nGLB exported to {args.output}/scene.glb")
+    print(f"GLB exported to {output_dir}/scene.glb")
     print(f"depth: {prediction.depth.shape}  range [{prediction.depth.min():.3f}, {prediction.depth.max():.3f}]")
+
+
+def main():
+    args = parser.parse_args()
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    print(f"Loading base architecture {args.pretrained}...")
+    api_model = DepthAnything3.from_pretrained(args.pretrained)
+    api_model.to(device)
+
+    if args.compare_pretrained:
+        print("\n=== Original pretrained model ===")
+        run_and_export(api_model, args, os.path.join(args.output, "pretrained"))
+
+    print(f"\nLoading fine-tuned weights from {args.checkpoint}...")
+    ckpt = torch.load(args.checkpoint, map_location="cpu")
+    api_model.model.load_state_dict(ckpt["model"])
+    api_model.model.eval()
+    api_model.to(device)
+
+    print_model_summary(api_model.model)
+
+    print("\n=== Fine-tuned model ===" if args.compare_pretrained else "")
+    run_and_export(
+        api_model, args, os.path.join(args.output, "finetuned") if args.compare_pretrained else args.output
+    )
 
 
 if __name__ == "__main__":
