@@ -1,0 +1,15 @@
+# Fast smoke test: 1 epoch, batch size 1, wandb off. Use to sanity-check a code/config change
+# runs end-to-end before committing to a full experiment.
+__inherit__: depth_anything_3.train.configs.default
+
+data:
+  rect: true
+  calib_path: "/home/elena/repos/Depth-Anything-3_training/camera_calibration/cam_sim.yaml"
+
+train:
+  grad_weight: 0.0
+  gl_weight: 0.0
+  save_path: workspace/rectify
+
+wandb:
+  enabled: false
