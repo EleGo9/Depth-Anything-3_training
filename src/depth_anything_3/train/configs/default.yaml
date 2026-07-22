@@ -18,8 +18,10 @@ model:
 # ==============================================================================
 data:
   # Plain-text "image_path depth_path" filelists (see train/dataset.py)
-  train_filelist: /home/egovi/data/DAsim_dataset_gatti/splits/fisheye_sim/train.txt
-  val_filelist: /home/egovi/data/DAsim_dataset_gatti/splits/fisheye_sim/val.txt
+  # train_filelist: /home/egovi/data/DAsim_dataset_gatti/splits/fisheye_sim/train.txt
+  # val_filelist: /home/egovi/data/DAsim_dataset_gatti/splits/fisheye_sim/val.txt
+  train_filelist: /media/elena/T7/DAsim_dataset_gatti/splits/fisheye_sim/train.txt
+  val_filelist: /media/elena/T7/DAsim_dataset_gatti/splits/fisheye_sim/val.txt
 
   # Longest image side after resize; must be a multiple of 14
   img_size: 504
@@ -30,12 +32,23 @@ data:
   # Multiply raw depth values by this to get meters
   depth_scale: 1.0
 
+  # Rectify fisheye image + depth onto a virtual pinhole camera (cv2.fisheye) before the
+  # resize/crop pipeline, so the model trains on undistorted content (matches how
+  # test_finetune_rectified.py rectifies before inference). Requires calib_path.
+  rect: false
+
+
+  # Path to a single calibration YAML (width, height, K.value0..8, D, fisheye: true -- see
+  # camera_calibration/ for examples) applied to every sample in the dataset. Only correct if
+  # every image was captured by the same physical camera. Ignored unless rect=true.
+  calib_path: null
+
 # ==============================================================================
 # Training
 # ==============================================================================
 train:
   epochs: 500
-  bs: 12
+  bs: 1
 
   # Base LR for unfrozen backbone params; head uses lr * 10.
   # 5e-6 / 5e-5 matches DA3-Metric's paper recipe (encoder/decoder LR), which lines up with this
@@ -84,7 +97,7 @@ train:
 # Weights & Biases logging (mirrors what's already sent to TensorBoard)
 # ==============================================================================
 wandb:
-  enabled: true
+  enabled: false
   project: depth-anything-3-finetune
 
   # Run name shown in the wandb UI (null = wandb auto-generates one)

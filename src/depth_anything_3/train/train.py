@@ -156,6 +156,7 @@ def main():
     trainset = MonocularDepthDataset(
         config.data.train_filelist, "train", size=size,
         min_depth=config.data.min_depth, max_depth=config.data.max_depth, depth_scale=config.data.depth_scale,
+        rect=config.data.rect, calib_path=config.data.calib_path,
     )
     trainsampler = DistributedSampler(trainset)
     trainloader = DataLoader(trainset, batch_size=config.train.bs, pin_memory=True, num_workers=4,
@@ -164,6 +165,7 @@ def main():
     valset = MonocularDepthDataset(
         config.data.val_filelist, "val", size=size,
         min_depth=config.data.min_depth, max_depth=config.data.max_depth, depth_scale=config.data.depth_scale,
+        rect=config.data.rect, calib_path=config.data.calib_path,
     )
     valsampler = DistributedSampler(valset, shuffle=False)
     valloader = DataLoader(valset, batch_size=1, pin_memory=True, num_workers=4,
