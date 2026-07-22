@@ -79,6 +79,7 @@ class DepthAnything3Wrapper(torch.nn.Module):
 def getArguments():
     parser = argparse.ArgumentParser(description='Replay tool for performance testing')
     parser.add_argument('--da3model', type=str, help='The Depth Anything 3 model to convert. It can be a Hugging Face project identifier or a path to the downloaded model.')
+    parser.add_argument('--ckpts', type=str, help='model checkpoints', default= None)
     parser.add_argument('--output', type=str, help='The path where to write the ONNX model file (.onnx).')
     parser.add_argument('--nviews', type=int, help='Number of views for the model\'s input')
     parser.add_argument('--batchsize', type=int, help='Batch size for the model\'s input')
@@ -98,6 +99,11 @@ if __name__ == "__main__":
 
     print("Loading the model...")
     model = DepthAnything3.from_pretrained(args.da3model)
+    if args.ckpts:
+        ckpt = torch.load(args.ckpts, map_location="cpu")
+        model.model.load_state_dict(ckpt["model"])
+        model.model.eval()
+        model.to(device)
     model = model.to(device)
     model.eval()
     print(f"Model at {args.da3model} loaded on {device}")
